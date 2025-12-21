@@ -275,8 +275,8 @@ export default function Map({ className = '' }: MapProps) {
   }, [currentAnalysis?.origin, mapLoaded]);
 
   return (
-    <div className={`relative w-full h-full ${className}`}>
-      <div ref={mapContainer} className="absolute inset-0" />
+    <div className={`w-full h-full ${className}`}>
+      <div ref={mapContainer} className="w-full h-full" />
       
       {/* Coordinates overlay */}
       <div className="absolute top-4 left-4 font-mono text-[10px] text-slate-500 tracking-wider pointer-events-none">
