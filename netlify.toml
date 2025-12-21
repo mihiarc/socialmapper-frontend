@@ -1,0 +1,44 @@
+# Netlify configuration for SocialMapper Frontend
+# https://docs.netlify.com/configure-builds/file-based-configuration/
+
+[build]
+  # Build command
+  command = "npm run build"
+  # Output directory for Next.js
+  publish = ".next"
+
+[build.environment]
+  # Node version
+  NODE_VERSION = "20"
+  # Next.js telemetry opt-out
+  NEXT_TELEMETRY_DISABLED = "1"
+
+# Next.js on Netlify plugin (handles SSR, ISR, etc.)
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Redirects for API proxy (optional - can route API calls through Netlify)
+# Uncomment if you want to proxy API calls to avoid CORS issues
+# [[redirects]]
+#   from = "/api/*"
+#   to = "https://YOUR_RENDER_URL.onrender.com/api/:splat"
+#   status = 200
+#   force = true
+
+# Headers for security and caching
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
