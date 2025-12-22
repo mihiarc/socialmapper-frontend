@@ -40,6 +40,7 @@ export default function SearchPanel() {
   const {
     location,
     setLocation,
+    coordinates,
     setCoordinates,
     travelMode,
     setTravelMode,
@@ -107,7 +108,7 @@ export default function SearchPanel() {
 
     try {
       const result = await runAnalysis({
-        location,
+        location: coordinates || location,
         travelMode,
         travelTime,
         poiCategories: selectedCategories,
