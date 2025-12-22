@@ -87,6 +87,8 @@ export default function SearchPanel() {
   // Handle location input change
   const handleLocationChange = (value: string) => {
     setLocation(value);
+    // Clear coordinates when location text changes (will be re-geocoded on analysis)
+    setCoordinates(null);
     setShowSuggestions(true);
     debouncedGeocode(value);
   };
@@ -107,8 +109,30 @@ export default function SearchPanel() {
     setError(null);
 
     try {
+      // If coordinates aren't set, geocode the location first
+      let analysisLocation: typeof coordinates | string = coordinates;
+
+      if (!analysisLocation && location) {
+        try {
+          const geocodeResults = await geocode(location);
+          if (geocodeResults.length > 0) {
+            analysisLocation = geocodeResults[0].coordinates;
+            // Update store with geocoded coordinates
+            setCoordinates(geocodeResults[0].coordinates);
+          } else {
+            throw new Error(`Could not find location: ${location}`);
+          }
+        } catch (geocodeErr) {
+          throw new Error(`Geocoding failed: ${geocodeErr instanceof Error ? geocodeErr.message : 'Unknown error'}`);
+        }
+      }
+
+      if (!analysisLocation) {
+        throw new Error('Please enter a valid location');
+      }
+
       const result = await runAnalysis({
-        location: coordinates || location,
+        location: analysisLocation,
         travelMode,
         travelTime,
         poiCategories: selectedCategories,
