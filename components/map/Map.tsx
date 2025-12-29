@@ -263,17 +263,38 @@ export default function Map({ className = '' }: MapProps) {
     });
   }, [currentAnalysis?.pois, layers, mapLoaded]);
 
-  // Fly to analysis location
+  // Fit map to isochrone bounds after analysis
   useEffect(() => {
-    if (!map.current || !mapLoaded || !currentAnalysis?.origin) return;
+    if (!map.current || !mapLoaded || !currentAnalysis?.isochrone?.geometry) return;
 
-    map.current.flyTo({
-      center: [currentAnalysis.origin.lng, currentAnalysis.origin.lat],
-      zoom: 13,
-      duration: 1500,
-      essential: true,
+    // Calculate bounds from isochrone geometry
+    const geometry = currentAnalysis.isochrone.geometry;
+    const coordinates = geometry.type === 'Polygon'
+      ? geometry.coordinates[0]
+      : geometry.coordinates.flat(1); // MultiPolygon: flatten first level
+
+    // Find min/max lat/lng
+    let minLng = Infinity, maxLng = -Infinity;
+    let minLat = Infinity, maxLat = -Infinity;
+
+    coordinates.forEach((coord: number[]) => {
+      const [lng, lat] = coord;
+      if (lng < minLng) minLng = lng;
+      if (lng > maxLng) maxLng = lng;
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
     });
-  }, [currentAnalysis?.origin, mapLoaded]);
+
+    // Fit bounds with padding
+    map.current.fitBounds(
+      [[minLng, minLat], [maxLng, maxLat]],
+      {
+        padding: { top: 50, bottom: 50, left: 50, right: 50 },
+        duration: 1500,
+        essential: true,
+      }
+    );
+  }, [currentAnalysis?.isochrone, mapLoaded]);
 
   // Fly to location when coordinates change (immediate feedback on location selection)
   useEffect(() => {
