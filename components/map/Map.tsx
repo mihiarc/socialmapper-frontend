@@ -179,7 +179,7 @@ export default function Map({ className = '' }: MapProps) {
             'fill-color': [
               'interpolate',
               ['linear'],
-              ['get', 'population'],
+              ['coalesce', ['get', 'population'], 0],
               0,
               '#1e293b',
               1000,
