@@ -1,12 +1,12 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import type {
-  AppState,
   Coordinates,
   TravelMode,
   POICategory,
   AnalysisResult,
   MapLayer,
+  ProgressEvent,
 } from './types';
 
 interface AppActions {
@@ -28,9 +28,12 @@ interface AppActions {
   // UI
   setSidebarOpen: (open: boolean) => void;
   toggleSidebar: () => void;
-  setActivePanel: (panel: AppState['activePanel']) => void;
+  setActivePanel: (panel: 'search' | 'results' | 'layers' | 'settings') => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
+
+  // Progress
+  setAnalysisProgress: (progress: ProgressEvent | null) => void;
   
   // Map
   setMapCenter: (center: Coordinates) => void;
@@ -44,6 +47,32 @@ interface AppActions {
   resetAll: () => void;
 }
 
+interface AppState {
+  // Analysis configuration
+  location: string;
+  coordinates: Coordinates | null;
+  travelMode: TravelMode;
+  travelTime: number;
+  selectedCategories: POICategory[];
+
+  // Results
+  currentAnalysis: AnalysisResult | null;
+  analysisHistory: AnalysisResult[];
+
+  // UI state
+  sidebarOpen: boolean;
+  activePanel: 'search' | 'results' | 'layers' | 'settings';
+  isLoading: boolean;
+  error: string | null;
+  analysisProgress: ProgressEvent | null;
+
+  // Map state
+  mapCenter: Coordinates;
+  mapZoom: number;
+  mapStyle: string;
+  layers: MapLayer[];
+}
+
 const initialState: AppState = {
   // Analysis configuration
   location: '',
@@ -51,16 +80,17 @@ const initialState: AppState = {
   travelMode: 'walk',
   travelTime: 15,
   selectedCategories: ['library'],
-  
+
   // Results
   currentAnalysis: null,
   analysisHistory: [],
-  
+
   // UI state
   sidebarOpen: true,
   activePanel: 'search',
   isLoading: false,
   error: null,
+  analysisProgress: null,
   
   // Map state
   mapCenter: { lat: 35.9132, lng: -79.0558 }, // Chapel Hill, NC
@@ -132,7 +162,10 @@ export const useAppStore = create<AppState & AppActions>()(
         setActivePanel: (activePanel) => set({ activePanel }),
         setLoading: (isLoading) => set({ isLoading }),
         setError: (error) => set({ error }),
-        
+
+        // Progress actions
+        setAnalysisProgress: (analysisProgress) => set({ analysisProgress }),
+
         // Map actions
         setMapCenter: (mapCenter) => set({ mapCenter }),
         setMapZoom: (mapZoom) => set({ mapZoom }),
@@ -162,6 +195,7 @@ export const useAppStore = create<AppState & AppActions>()(
             location: '',
             coordinates: null,
             currentAnalysis: null,
+            analysisProgress: null,
             error: null,
             activePanel: 'search',
           }),

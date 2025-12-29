@@ -81,6 +81,27 @@ export interface AnalysisRequest {
   year?: number;
 }
 
+// Analysis progress tracking
+export type AnalysisStep =
+  | 'initializing'
+  | 'isochrone'
+  | 'poi_discovery'
+  | 'census_data'
+  | 'processing'
+  | 'complete'
+  | 'error';
+
+export interface ProgressEvent {
+  step: AnalysisStep;
+  stepNumber: number;
+  totalSteps: number;
+  percentage: number;
+  message: string;
+  details?: string;
+  error?: string;
+  result?: AnalysisResult;
+}
+
 // Analysis result
 export interface AnalysisResult {
   id: string;

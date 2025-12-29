@@ -27,6 +27,7 @@ export default function Map({ className = '' }: MapProps) {
     layers,
     setMapCenter,
     setMapZoom,
+    coordinates,
   } = useAppStore();
 
   // Initialize map
@@ -273,6 +274,18 @@ export default function Map({ className = '' }: MapProps) {
       essential: true,
     });
   }, [currentAnalysis?.origin, mapLoaded]);
+
+  // Fly to location when coordinates change (immediate feedback on location selection)
+  useEffect(() => {
+    if (!map.current || !mapLoaded || !coordinates) return;
+
+    map.current.flyTo({
+      center: [coordinates.lng, coordinates.lat],
+      zoom: 13,
+      duration: 1500,
+      essential: true,
+    });
+  }, [mapLoaded, coordinates]);
 
   return (
     <div className={`w-full h-full ${className}`}>

@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Search, MapPin, Play, Loader2 } from 'lucide-react';
+import { Search, MapPin, Play, Loader2, Navigation, Users, BarChart3, Check, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore, useIsReadyToAnalyze } from '@/lib/store';
-import { geocode, runAnalysis } from '@/lib/api';
+import { geocode } from '@/lib/api';
+import { runAnalysisWithProgress } from '@/lib/sse';
 import { cn, debounce } from '@/lib/utils';
 import { POI_CATEGORIES, TRAVEL_MODES } from '@/lib/types';
-import type { GeocodingResult, POICategory, TravelMode } from '@/lib/types';
+import type { GeocodingResult, POICategory, ProgressEvent } from '@/lib/types';
 
 // Icon mapping
 import {
@@ -54,6 +55,8 @@ export default function SearchPanel() {
     setError,
     isLoading,
     setActivePanel,
+    analysisProgress,
+    setAnalysisProgress,
   } = useAppStore();
 
   const isReady = useIsReadyToAnalyze();
@@ -61,6 +64,14 @@ export default function SearchPanel() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
 
   // Debounced geocoding
   const debouncedGeocode = useCallback(
@@ -101,12 +112,13 @@ export default function SearchPanel() {
     setShowSuggestions(false);
   };
 
-  // Run analysis
+  // Run analysis with streaming progress
   const handleRunAnalysis = async () => {
     if (!isReady) return;
 
     setLoading(true);
     setError(null);
+    setAnalysisProgress(null);
 
     try {
       // If coordinates aren't set, geocode the location first
@@ -131,31 +143,38 @@ export default function SearchPanel() {
         throw new Error('Please enter a valid location');
       }
 
-      const result = await runAnalysis({
-        location: analysisLocation,
-        travelMode,
-        travelTime,
-        poiCategories: selectedCategories,
-      });
-
-      setCurrentAnalysis(result);
-      addToHistory(result);
-      setActivePanel('results');
+      // Use SSE for streaming progress
+      abortControllerRef.current = runAnalysisWithProgress(
+        {
+          location: analysisLocation,
+          travelMode,
+          travelTime,
+          poiCategories: selectedCategories,
+        },
+        {
+          onProgress: (event) => {
+            setAnalysisProgress(event);
+          },
+          onComplete: (result) => {
+            setCurrentAnalysis(result);
+            addToHistory(result);
+            setActivePanel('results');
+            setLoading(false);
+            setAnalysisProgress(null);
+          },
+          onError: (error) => {
+            setError(error);
+            setLoading(false);
+            setAnalysisProgress(null);
+          },
+        }
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Analysis failed');
-    } finally {
       setLoading(false);
     }
   };
 
-  // Quick location suggestions
-  const quickLocations = [
-    'Chapel Hill, NC',
-    'Durham, NC',
-    'Raleigh, NC',
-    'Fuquay-Varina, NC',
-    'Portland, OR',
-  ];
 
   return (
     <div className="p-5 space-y-6">
@@ -193,31 +212,13 @@ export default function SearchPanel() {
 
           {/* Suggestions dropdown */}
           <AnimatePresence>
-            {showSuggestions && (suggestions.length > 0 || !location) && (
+            {showSuggestions && suggestions.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 className="absolute top-full left-0 right-0 mt-2 bg-carto-elevated/95 backdrop-blur-sm border border-carto-border/50 rounded-xl overflow-hidden shadow-xl z-50"
               >
-                {!location && (
-                  <>
-                    <div className="px-3 py-2 text-2xs text-slate-500 uppercase tracking-wider border-b border-carto-border/30">
-                      Quick access
-                    </div>
-                    {quickLocations.map((loc) => (
-                      <button
-                        key={loc}
-                        onClick={() => handleLocationChange(loc)}
-                        className="w-full px-4 py-2.5 text-left text-sm text-slate-300 hover:bg-slate-700/50 transition-colors flex items-center gap-3"
-                      >
-                        <MapPin className="w-4 h-4 text-slate-500" />
-                        {loc}
-                      </button>
-                    ))}
-                  </>
-                )}
-
                 {suggestions.map((result, i) => (
                   <button
                     key={i}
@@ -345,7 +346,7 @@ export default function SearchPanel() {
         {isLoading ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            Analyzing...
+            {analysisProgress ? `${analysisProgress.percentage}%` : 'Starting...'}
           </>
         ) : (
           <>
@@ -355,10 +356,58 @@ export default function SearchPanel() {
         )}
       </button>
 
+      {/* Progress Display */}
+      <AnimatePresence>
+        {isLoading && analysisProgress && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="space-y-3 overflow-hidden"
+          >
+            {/* Progress Bar */}
+            <div className="relative h-2 bg-slate-700/50 rounded-full overflow-hidden">
+              <motion.div
+                className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-600 to-blue-400 rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${analysisProgress.percentage}%` }}
+                transition={{ duration: 0.3, ease: 'easeOut' }}
+              />
+            </div>
+
+            {/* Step Indicator */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {analysisProgress.step === 'isochrone' && <Navigation className="w-4 h-4 text-blue-400" />}
+                {analysisProgress.step === 'poi_discovery' && <MapPin className="w-4 h-4 text-green-400" />}
+                {analysisProgress.step === 'census_data' && <Users className="w-4 h-4 text-purple-400" />}
+                {analysisProgress.step === 'processing' && <BarChart3 className="w-4 h-4 text-orange-400" />}
+                {analysisProgress.step === 'initializing' && <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />}
+                {analysisProgress.step === 'complete' && <Check className="w-4 h-4 text-green-400" />}
+                {analysisProgress.step === 'error' && <AlertCircle className="w-4 h-4 text-red-400" />}
+                <span className="text-sm text-slate-300">{analysisProgress.message}</span>
+              </div>
+              <span className="text-2xs text-slate-500">
+                Step {analysisProgress.stepNumber} of {analysisProgress.totalSteps}
+              </span>
+            </div>
+
+            {/* Details */}
+            {analysisProgress.details && (
+              <p className="text-2xs text-slate-500 text-center">
+                {analysisProgress.details}
+              </p>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Help text */}
-      <p className="text-2xs text-slate-500 text-center">
-        Select a location and at least one POI category to analyze
-      </p>
+      {!isLoading && (
+        <p className="text-2xs text-slate-500 text-center">
+          Select a location and at least one POI category to analyze
+        </p>
+      )}
     </div>
   );
 }
