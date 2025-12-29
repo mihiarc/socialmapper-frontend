@@ -242,12 +242,13 @@ export default function Map({ className = '' }: MapProps) {
 
       // Create popup for hover tooltip
       const popup = new mapboxgl.Popup({
-        offset: 20,
+        offset: [0, -10],
         closeButton: false,
         closeOnClick: false,
         className: 'poi-popup',
+        anchor: 'bottom',
       }).setHTML(`
-        <div style="padding: 8px 12px; background: #1f2937; border-radius: 8px; border: 1px solid #374151;">
+        <div style="padding: 8px 12px; background: #1f2937; border-radius: 8px; border: 1px solid #374151; pointer-events: none;">
           <div style="font-weight: 600; color: #f3f4f6; font-size: 13px;">${poi.name}</div>
           <div style="color: #9ca3af; font-size: 11px; text-transform: capitalize; margin-top: 2px;">${poi.category}</div>
           ${poi.distance ? `<div style="color: #60a5fa; font-size: 10px; margin-top: 4px;">${(poi.distance / 1000).toFixed(2)} km away</div>` : ''}
@@ -256,17 +257,16 @@ export default function Map({ className = '' }: MapProps) {
 
       const marker = new mapboxgl.Marker({ element: el })
         .setLngLat([poi.coordinates.lng, poi.coordinates.lat])
-        .setPopup(popup)
         .addTo(map.current!);
 
-      // Show popup on hover
+      // Show popup on hover (without attaching to marker to avoid toggle issues)
       el.addEventListener('mouseenter', () => {
         el.style.transform = 'scale(1.5)';
-        marker.togglePopup();
+        popup.setLngLat([poi.coordinates.lng, poi.coordinates.lat]).addTo(map.current!);
       });
       el.addEventListener('mouseleave', () => {
         el.style.transform = 'scale(1)';
-        marker.togglePopup();
+        popup.remove();
       });
 
       markersRef.current.push(marker);
