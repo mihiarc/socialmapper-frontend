@@ -17,6 +17,7 @@ interface MapProps {
 export default function Map({ className = '' }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  const markersRef = useRef<mapboxgl.Marker[]>([]);
   const [mapLoaded, setMapLoaded] = useState(false);
 
   const {
@@ -212,55 +213,66 @@ export default function Map({ className = '' }: MapProps) {
 
   // Add/update POI markers
   useEffect(() => {
-    if (!map.current || !mapLoaded || !currentAnalysis?.pois) return;
+    if (!map.current || !mapLoaded) return;
 
     const poiLayer = layers.find((l) => l.id === 'pois');
-    
-    // Remove existing markers
-    const existingMarkers = document.querySelectorAll('.poi-marker');
-    existingMarkers.forEach((el) => el.remove());
 
-    if (!poiLayer?.visible) return;
+    // Remove existing markers properly
+    markersRef.current.forEach((marker) => marker.remove());
+    markersRef.current = [];
+
+    // Don't add markers if layer is hidden or no POIs
+    if (!poiLayer?.visible || !currentAnalysis?.pois) return;
 
     // Add new markers
     currentAnalysis.pois.forEach((poi) => {
       const el = document.createElement('div');
       el.className = 'poi-marker';
       el.style.cssText = `
-        width: 12px;
-        height: 12px;
+        width: 14px;
+        height: 14px;
         background-color: ${getPOIColor(poi.category)};
         border-radius: 50%;
         border: 2px solid white;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.4);
         cursor: pointer;
         transition: transform 0.2s ease;
+        z-index: 10;
       `;
-      
-      el.addEventListener('mouseenter', () => {
-        el.style.transform = 'scale(1.5)';
-      });
-      el.addEventListener('mouseleave', () => {
-        el.style.transform = 'scale(1)';
-      });
 
+      // Create popup for hover tooltip
       const popup = new mapboxgl.Popup({
-        offset: 15,
+        offset: 20,
         closeButton: false,
+        closeOnClick: false,
         className: 'poi-popup',
       }).setHTML(`
-        <div style="padding: 8px 12px; background: #1f2937; border-radius: 8px;">
-          <div style="font-weight: 500; color: #e5e7eb; font-size: 13px;">${poi.name}</div>
+        <div style="padding: 8px 12px; background: #1f2937; border-radius: 8px; border: 1px solid #374151;">
+          <div style="font-weight: 600; color: #f3f4f6; font-size: 13px;">${poi.name}</div>
           <div style="color: #9ca3af; font-size: 11px; text-transform: capitalize; margin-top: 2px;">${poi.category}</div>
-          ${poi.distance ? `<div style="color: #6b7280; font-size: 10px; margin-top: 4px;">${(poi.distance / 1000).toFixed(2)} km</div>` : ''}
+          ${poi.distance ? `<div style="color: #60a5fa; font-size: 10px; margin-top: 4px;">${(poi.distance / 1000).toFixed(2)} km away</div>` : ''}
         </div>
       `);
 
-      new mapboxgl.Marker({ element: el })
+      const marker = new mapboxgl.Marker({ element: el })
         .setLngLat([poi.coordinates.lng, poi.coordinates.lat])
         .setPopup(popup)
         .addTo(map.current!);
+
+      // Show popup on hover
+      el.addEventListener('mouseenter', () => {
+        el.style.transform = 'scale(1.5)';
+        marker.togglePopup();
+      });
+      el.addEventListener('mouseleave', () => {
+        el.style.transform = 'scale(1)';
+        marker.togglePopup();
+      });
+
+      markersRef.current.push(marker);
     });
+
+    console.log(`Added ${markersRef.current.length} POI markers`);
   }, [currentAnalysis?.pois, layers, mapLoaded]);
 
   // Fit map to isochrone bounds after analysis
