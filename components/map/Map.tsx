@@ -281,16 +281,23 @@ export default function Map({ className = '' }: MapProps) {
 
     // Calculate bounds from isochrone geometry
     const geometry = currentAnalysis.isochrone.geometry;
-    const coordinates = geometry.type === 'Polygon'
-      ? geometry.coordinates[0]
-      : geometry.coordinates.flat(1); // MultiPolygon: flatten first level
+
+    // Extract coordinates based on geometry type
+    let coords: [number, number][] = [];
+    if (geometry.type === 'Polygon') {
+      coords = geometry.coordinates[0] as [number, number][];
+    } else if (geometry.type === 'MultiPolygon') {
+      // Flatten all polygon rings
+      coords = geometry.coordinates.flat(2) as [number, number][];
+    }
+
+    if (coords.length === 0) return;
 
     // Find min/max lat/lng
     let minLng = Infinity, maxLng = -Infinity;
     let minLat = Infinity, maxLat = -Infinity;
 
-    coordinates.forEach((coord: number[]) => {
-      const [lng, lat] = coord;
+    coords.forEach(([lng, lat]) => {
       if (lng < minLng) minLng = lng;
       if (lng > maxLng) maxLng = lng;
       if (lat < minLat) minLat = lat;
