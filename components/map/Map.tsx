@@ -226,6 +226,12 @@ export default function Map({ className = '' }: MapProps) {
 
     // Add new markers
     currentAnalysis.pois.forEach((poi) => {
+      // Container element for Mapbox positioning
+      const container = document.createElement('div');
+      container.className = 'poi-marker-container';
+      container.style.cssText = 'cursor: pointer;';
+
+      // Inner element for visual styling (so we can animate without affecting Mapbox transforms)
       const el = document.createElement('div');
       el.className = 'poi-marker';
       el.style.cssText = `
@@ -235,14 +241,13 @@ export default function Map({ className = '' }: MapProps) {
         border-radius: 50%;
         border: 2px solid white;
         box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-        cursor: pointer;
-        transition: transform 0.2s ease;
-        z-index: 10;
+        transition: all 0.15s ease;
       `;
+      container.appendChild(el);
 
       // Create popup for hover tooltip
       const popup = new mapboxgl.Popup({
-        offset: [0, -10],
+        offset: [0, -12],
         closeButton: false,
         closeOnClick: false,
         className: 'poi-popup',
@@ -255,17 +260,23 @@ export default function Map({ className = '' }: MapProps) {
         </div>
       `);
 
-      const marker = new mapboxgl.Marker({ element: el })
+      const marker = new mapboxgl.Marker({ element: container })
         .setLngLat([poi.coordinates.lng, poi.coordinates.lat])
         .addTo(map.current!);
 
-      // Show popup on hover (without attaching to marker to avoid toggle issues)
-      el.addEventListener('mouseenter', () => {
-        el.style.transform = 'scale(1.5)';
+      // Show popup on hover - animate inner element only (not container)
+      container.addEventListener('mouseenter', () => {
+        el.style.width = '20px';
+        el.style.height = '20px';
+        el.style.marginLeft = '-3px';
+        el.style.marginTop = '-3px';
         popup.setLngLat([poi.coordinates.lng, poi.coordinates.lat]).addTo(map.current!);
       });
-      el.addEventListener('mouseleave', () => {
-        el.style.transform = 'scale(1)';
+      container.addEventListener('mouseleave', () => {
+        el.style.width = '14px';
+        el.style.height = '14px';
+        el.style.marginLeft = '0';
+        el.style.marginTop = '0';
         popup.remove();
       });
 
