@@ -18,6 +18,7 @@ export default function Map({ className = '' }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const censusPopupRef = useRef<mapboxgl.Popup | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
 
   const {
@@ -218,6 +219,92 @@ export default function Map({ className = '' }: MapProps) {
       );
     }
   }, [currentAnalysis?.censusBlocks, layers, mapLoaded]);
+
+  // Census block hover popup
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    // Create popup if not exists
+    if (!censusPopupRef.current) {
+      censusPopupRef.current = new mapboxgl.Popup({
+        closeButton: false,
+        closeOnClick: false,
+        className: 'census-popup',
+      });
+    }
+
+    const formatNumber = (num: number | undefined | null) => {
+      if (num === undefined || num === null) return 'N/A';
+      return num.toLocaleString();
+    };
+
+    const formatCurrency = (num: number | undefined | null) => {
+      if (num === undefined || num === null || num < 0) return 'N/A';
+      return '$' + num.toLocaleString();
+    };
+
+    const onMouseEnter = () => {
+      if (map.current) map.current.getCanvas().style.cursor = 'pointer';
+    };
+
+    const onMouseLeave = () => {
+      if (map.current) map.current.getCanvas().style.cursor = '';
+      censusPopupRef.current?.remove();
+    };
+
+    const onMouseMove = (e: mapboxgl.MapMouseEvent & { features?: mapboxgl.MapboxGeoJSONFeature[] }) => {
+      if (!e.features || e.features.length === 0 || !censusPopupRef.current || !map.current) return;
+
+      const feature = e.features[0];
+      const props = feature.properties || {};
+
+      const population = props.population || props.total_population || props.B01003_001E;
+      const medianIncome = props.median_income || props.B19013_001E;
+      const medianAge = props.median_age || props.B01002_001E;
+
+      const html = `
+        <div style="padding: 10px 14px; background: #1f2937; border-radius: 8px; border: 1px solid #374151; min-width: 180px;">
+          <div style="font-weight: 600; color: #f3f4f6; font-size: 12px; margin-bottom: 8px; border-bottom: 1px solid #374151; padding-bottom: 6px;">
+            Census Block ${props.geoid || 'Unknown'}
+          </div>
+          <div style="display: grid; gap: 4px; font-size: 12px;">
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #9ca3af;">Population</span>
+              <span style="color: #60a5fa; font-weight: 500;">${formatNumber(population)}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #9ca3af;">Median Income</span>
+              <span style="color: #34d399; font-weight: 500;">${formatCurrency(medianIncome)}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #9ca3af;">Median Age</span>
+              <span style="color: #fbbf24; font-weight: 500;">${medianAge ? medianAge.toFixed(1) : 'N/A'}</span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      censusPopupRef.current
+        .setLngLat(e.lngLat)
+        .setHTML(html)
+        .addTo(map.current);
+    };
+
+    // Add event listeners
+    map.current.on('mouseenter', 'census-fill', onMouseEnter);
+    map.current.on('mouseleave', 'census-fill', onMouseLeave);
+    map.current.on('mousemove', 'census-fill', onMouseMove);
+
+    // Cleanup
+    return () => {
+      if (map.current) {
+        map.current.off('mouseenter', 'census-fill', onMouseEnter);
+        map.current.off('mouseleave', 'census-fill', onMouseLeave);
+        map.current.off('mousemove', 'census-fill', onMouseMove);
+      }
+      censusPopupRef.current?.remove();
+    };
+  }, [mapLoaded]);
 
   // Add/update POI markers
   useEffect(() => {
