@@ -141,14 +141,7 @@ export default function Map({ className = '' }: MapProps) {
     if (!map.current || !mapLoaded || !currentAnalysis?.censusBlocks) return;
 
     const censusLayer = layers.find((l) => l.id === 'census');
-    if (!censusLayer?.visible) {
-      if (map.current.getLayer('census-fill')) {
-        map.current.removeLayer('census-fill');
-        map.current.removeLayer('census-outline');
-        map.current.removeSource('census');
-      }
-      return;
-    }
+    const visibility = censusLayer?.visible ? 'visible' : 'none';
 
     const geojson: GeoJSON.FeatureCollection = {
       type: 'FeatureCollection',
@@ -163,18 +156,30 @@ export default function Map({ className = '' }: MapProps) {
     };
 
     if (map.current.getSource('census')) {
+      // Update data and visibility
       (map.current.getSource('census') as mapboxgl.GeoJSONSource).setData(geojson);
+      if (map.current.getLayer('census-fill')) {
+        map.current.setLayoutProperty('census-fill', 'visibility', visibility);
+        map.current.setLayoutProperty('census-outline', 'visibility', visibility);
+      }
     } else {
+      // Create source and layers
       map.current.addSource('census', {
         type: 'geojson',
         data: geojson,
       });
+
+      // Find a valid "before" layer or add at default position
+      const beforeLayer = map.current.getLayer('isochrone-fill') ? 'isochrone-fill' : undefined;
 
       map.current.addLayer(
         {
           id: 'census-fill',
           type: 'fill',
           source: 'census',
+          layout: {
+            visibility: visibility,
+          },
           paint: {
             'fill-color': [
               'interpolate',
@@ -189,10 +194,10 @@ export default function Map({ className = '' }: MapProps) {
               10000,
               '#60a5fa',
             ],
-            'fill-opacity': censusLayer.opacity * 0.5,
+            'fill-opacity': (censusLayer?.opacity ?? 0.7) * 0.5,
           },
         },
-        'isochrone-fill'
+        beforeLayer
       );
 
       map.current.addLayer(
@@ -200,13 +205,16 @@ export default function Map({ className = '' }: MapProps) {
           id: 'census-outline',
           type: 'line',
           source: 'census',
+          layout: {
+            visibility: visibility,
+          },
           paint: {
             'line-color': '#475569',
             'line-width': 0.5,
             'line-opacity': 0.5,
           },
         },
-        'isochrone-fill'
+        beforeLayer
       );
     }
   }, [currentAnalysis?.censusBlocks, layers, mapLoaded]);
