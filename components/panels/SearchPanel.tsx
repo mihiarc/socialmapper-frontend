@@ -24,7 +24,7 @@ import {
   // Tier 2: Community Services
   Landmark,         // bank
   Mail,             // post_office
-  Users,            // community
+  // Users already imported above for progress display
   // Tier 3: Emergency & Civic
   Flame,            // fire_station
   Shield,           // police
