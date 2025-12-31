@@ -16,23 +16,35 @@ export interface BoundingBox {
 export type TravelMode = 'walk' | 'bike' | 'drive';
 
 // POI category identifiers
-export type POICategory = 
-  | 'library'
-  | 'hospital'
-  | 'clinic'
-  | 'school'
-  | 'grocery'
-  | 'supermarket'
-  | 'park'
-  | 'restaurant'
-  | 'cafe'
-  | 'transit'
-  | 'bus_station'
-  | 'pharmacy'
-  | 'bank'
-  | 'post_office'
-  | 'fire_station'
-  | 'police';
+// Organized by equity analysis priority (15-minute city framework)
+export type POICategory =
+  // Tier 1: Core Equity Indicators
+  | 'grocery'       // Food access (food desert analysis)
+  | 'healthcare'    // Combined healthcare facilities
+  | 'hospital'      // Hospitals specifically
+  | 'clinic'        // Clinics and doctors
+  | 'pharmacy'      // Medication access
+  | 'transit'       // Public transportation
+  | 'bus_station'   // Bus stops/stations
+  | 'school'        // Education access
+  | 'library'       // Information access
+  | 'park'          // Green space equity
+  | 'childcare'     // Early childhood (NEW)
+  // Tier 2: Community Services
+  | 'bank'          // Financial services
+  | 'post_office'   // Postal services
+  | 'community'     // Community centers (NEW)
+  // Tier 3: Emergency & Civic
+  | 'fire_station'  // Fire services
+  | 'police'        // Police services
+  | 'emergency'     // Combined emergency (NEW)
+  | 'government'    // Government offices (NEW)
+  // Tier 4: Quality of Life
+  | 'restaurant'    // Dining
+  | 'cafe'          // Cafes
+  | 'fitness'       // Gyms/sports (NEW)
+  | 'supermarket'   // Supermarkets specifically
+  | 'religious';    // Places of worship (NEW)
 
 // Point of Interest
 export interface POI {
@@ -273,17 +285,166 @@ export interface POICategoryMeta {
   osmTags: string[];
 }
 
+// POI Categories organized by equity analysis priority
+// Tier 1 categories are most critical for underserved community analysis
 export const POI_CATEGORIES: POICategoryMeta[] = [
-  { id: 'library', name: 'Libraries', icon: 'BookOpen', color: '#60A5FA', osmTags: ['amenity=library'] },
-  { id: 'hospital', name: 'Hospitals', icon: 'Building2', color: '#F87171', osmTags: ['amenity=hospital'] },
-  { id: 'clinic', name: 'Clinics', icon: 'Stethoscope', color: '#FB7185', osmTags: ['amenity=clinic'] },
-  { id: 'school', name: 'Schools', icon: 'GraduationCap', color: '#FBBF24', osmTags: ['amenity=school'] },
-  { id: 'grocery', name: 'Groceries', icon: 'ShoppingCart', color: '#34D399', osmTags: ['shop=supermarket', 'shop=grocery'] },
-  { id: 'park', name: 'Parks', icon: 'TreePine', color: '#4ADE80', osmTags: ['leisure=park'] },
-  { id: 'restaurant', name: 'Restaurants', icon: 'Utensils', color: '#FB923C', osmTags: ['amenity=restaurant'] },
-  { id: 'cafe', name: 'Cafes', icon: 'Coffee', color: '#F472B6', osmTags: ['amenity=cafe'] },
-  { id: 'transit', name: 'Transit', icon: 'Bus', color: '#A78BFA', osmTags: ['public_transport=station'] },
-  { id: 'pharmacy', name: 'Pharmacies', icon: 'Pill', color: '#22D3EE', osmTags: ['amenity=pharmacy'] },
+  // ========================================
+  // TIER 1: Core Equity Indicators (Primary UI display)
+  // ========================================
+  {
+    id: 'grocery',
+    name: 'Groceries',
+    icon: 'ShoppingCart',
+    color: '#34D399',  // Emerald
+    osmTags: ['shop=supermarket', 'shop=grocery', 'shop=convenience', 'shop=greengrocer'],
+  },
+  {
+    id: 'healthcare',
+    name: 'Healthcare',
+    icon: 'Heart',
+    color: '#F87171',  // Red
+    osmTags: ['amenity=hospital', 'amenity=clinic', 'amenity=doctors', 'amenity=dentist'],
+  },
+  {
+    id: 'pharmacy',
+    name: 'Pharmacies',
+    icon: 'Pill',
+    color: '#22D3EE',  // Cyan
+    osmTags: ['amenity=pharmacy', 'shop=chemist'],
+  },
+  {
+    id: 'transit',
+    name: 'Transit',
+    icon: 'Bus',
+    color: '#A78BFA',  // Purple
+    osmTags: ['public_transport=station', 'railway=station', 'amenity=bus_station', 'highway=bus_stop'],
+  },
+  {
+    id: 'school',
+    name: 'Schools',
+    icon: 'GraduationCap',
+    color: '#FBBF24',  // Amber
+    osmTags: ['amenity=school', 'amenity=college', 'amenity=university'],
+  },
+  {
+    id: 'library',
+    name: 'Libraries',
+    icon: 'BookOpen',
+    color: '#60A5FA',  // Blue
+    osmTags: ['amenity=library'],
+  },
+  {
+    id: 'park',
+    name: 'Parks',
+    icon: 'TreePine',
+    color: '#4ADE80',  // Green
+    osmTags: ['leisure=park', 'leisure=garden', 'leisure=playground'],
+  },
+  {
+    id: 'childcare',
+    name: 'Childcare',
+    icon: 'Baby',
+    color: '#F9A8D4',  // Pink
+    osmTags: ['amenity=kindergarten', 'amenity=childcare'],
+  },
+
+  // ========================================
+  // TIER 2: Community Services
+  // ========================================
+  {
+    id: 'bank',
+    name: 'Banks',
+    icon: 'Landmark',
+    color: '#94A3B8',  // Slate
+    osmTags: ['amenity=bank', 'amenity=atm'],
+  },
+  {
+    id: 'post_office',
+    name: 'Post Offices',
+    icon: 'Mail',
+    color: '#FCD34D',  // Yellow
+    osmTags: ['amenity=post_office'],
+  },
+  {
+    id: 'community',
+    name: 'Community Centers',
+    icon: 'Users',
+    color: '#C084FC',  // Violet
+    osmTags: ['amenity=community_centre', 'amenity=social_facility'],
+  },
+
+  // ========================================
+  // TIER 3: Emergency & Civic Services
+  // ========================================
+  {
+    id: 'fire_station',
+    name: 'Fire Stations',
+    icon: 'Flame',
+    color: '#EF4444',  // Red
+    osmTags: ['amenity=fire_station'],
+  },
+  {
+    id: 'police',
+    name: 'Police',
+    icon: 'Shield',
+    color: '#3B82F6',  // Blue
+    osmTags: ['amenity=police'],
+  },
+  {
+    id: 'government',
+    name: 'Government',
+    icon: 'Building',
+    color: '#6B7280',  // Gray
+    osmTags: ['amenity=townhall', 'office=government'],
+  },
+
+  // ========================================
+  // TIER 4: Quality of Life
+  // ========================================
+  {
+    id: 'restaurant',
+    name: 'Restaurants',
+    icon: 'Utensils',
+    color: '#FB923C',  // Orange
+    osmTags: ['amenity=restaurant', 'amenity=fast_food'],
+  },
+  {
+    id: 'cafe',
+    name: 'Cafes',
+    icon: 'Coffee',
+    color: '#F472B6',  // Pink
+    osmTags: ['amenity=cafe'],
+  },
+  {
+    id: 'fitness',
+    name: 'Fitness',
+    icon: 'Dumbbell',
+    color: '#14B8A6',  // Teal
+    osmTags: ['leisure=fitness_centre', 'leisure=sports_centre'],
+  },
+  {
+    id: 'religious',
+    name: 'Places of Worship',
+    icon: 'Church',
+    color: '#8B5CF6',  // Violet
+    osmTags: ['amenity=place_of_worship'],
+  },
+
+  // Legacy categories (for backward compatibility)
+  {
+    id: 'hospital',
+    name: 'Hospitals',
+    icon: 'Building2',
+    color: '#F87171',
+    osmTags: ['amenity=hospital'],
+  },
+  {
+    id: 'clinic',
+    name: 'Clinics',
+    icon: 'Stethoscope',
+    color: '#FB7185',
+    osmTags: ['amenity=clinic', 'amenity=doctors'],
+  },
 ];
 
 export const TRAVEL_MODES: { id: TravelMode; name: string; speed: string; emoji: string }[] = [

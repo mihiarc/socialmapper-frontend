@@ -10,31 +10,61 @@ import { cn, debounce } from '@/lib/utils';
 import { POI_CATEGORIES, TRAVEL_MODES } from '@/lib/types';
 import type { GeocodingResult, POICategory, ProgressEvent } from '@/lib/types';
 
-// Icon mapping
+// Icon mapping for POI categories
 import {
-  BookOpen,
-  Building2,
-  Stethoscope,
-  GraduationCap,
-  ShoppingCart,
-  TreePine,
-  Utensils,
-  Coffee,
-  Bus,
-  Pill,
+  // Tier 1: Core Equity Indicators
+  ShoppingCart,     // grocery
+  Heart,            // healthcare
+  Pill,             // pharmacy
+  Bus,              // transit
+  GraduationCap,    // school
+  BookOpen,         // library
+  TreePine,         // park
+  Baby,             // childcare
+  // Tier 2: Community Services
+  Landmark,         // bank
+  Mail,             // post_office
+  Users,            // community
+  // Tier 3: Emergency & Civic
+  Flame,            // fire_station
+  Shield,           // police
+  Building,         // government
+  // Tier 4: Quality of Life
+  Utensils,         // restaurant
+  Coffee,           // cafe
+  Dumbbell,         // fitness
+  Church,           // religious
+  // Legacy
+  Building2,        // hospital
+  Stethoscope,      // clinic
 } from 'lucide-react';
 
 const ICONS: Record<string, React.ElementType> = {
-  BookOpen,
-  Building2,
-  Stethoscope,
-  GraduationCap,
+  // Tier 1: Core Equity Indicators
   ShoppingCart,
+  Heart,
+  Pill,
+  Bus,
+  GraduationCap,
+  BookOpen,
   TreePine,
+  Baby,
+  // Tier 2: Community Services
+  Landmark,
+  Mail,
+  Users,
+  // Tier 3: Emergency & Civic
+  Flame,
+  Shield,
+  Building,
+  // Tier 4: Quality of Life
   Utensils,
   Coffee,
-  Bus,
-  Pill,
+  Dumbbell,
+  Church,
+  // Legacy
+  Building2,
+  Stethoscope,
 };
 
 export default function SearchPanel() {

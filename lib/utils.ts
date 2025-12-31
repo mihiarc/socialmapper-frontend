@@ -212,23 +212,40 @@ export function getBoundingBox(
 }
 
 // Color palette for POI categories
+// Organized by equity analysis priority tiers
 export const POI_COLORS: Record<string, string> = {
-  library: '#60A5FA',
-  hospital: '#F87171',
-  clinic: '#FB7185',
-  school: '#FBBF24',
-  grocery: '#34D399',
-  supermarket: '#34D399',
-  park: '#4ADE80',
-  restaurant: '#FB923C',
-  cafe: '#F472B6',
-  transit: '#A78BFA',
-  bus_station: '#A78BFA',
-  pharmacy: '#22D3EE',
-  bank: '#94A3B8',
-  post_office: '#FCD34D',
-  fire_station: '#EF4444',
-  police: '#3B82F6',
+  // Tier 1: Core Equity Indicators
+  grocery: '#34D399',       // Emerald - food access
+  healthcare: '#F87171',    // Red - medical access
+  pharmacy: '#22D3EE',      // Cyan - medication access
+  transit: '#A78BFA',       // Purple - transportation
+  school: '#FBBF24',        // Amber - education
+  library: '#60A5FA',       // Blue - information access
+  park: '#4ADE80',          // Green - green space
+  childcare: '#F9A8D4',     // Pink - early childhood
+
+  // Tier 2: Community Services
+  bank: '#94A3B8',          // Slate - financial services
+  post_office: '#FCD34D',   // Yellow - postal services
+  community: '#C084FC',     // Violet - community centers
+
+  // Tier 3: Emergency & Civic
+  fire_station: '#EF4444',  // Red - fire services
+  police: '#3B82F6',        // Blue - police services
+  emergency: '#DC2626',     // Dark red - combined emergency
+  government: '#6B7280',    // Gray - civic services
+
+  // Tier 4: Quality of Life
+  restaurant: '#FB923C',    // Orange - dining
+  cafe: '#F472B6',          // Pink - cafes
+  fitness: '#14B8A6',       // Teal - gyms/sports
+  religious: '#8B5CF6',     // Violet - places of worship
+
+  // Legacy/specific categories (backward compatibility)
+  hospital: '#F87171',      // Same as healthcare
+  clinic: '#FB7185',        // Lighter red
+  supermarket: '#34D399',   // Same as grocery
+  bus_station: '#A78BFA',   // Same as transit
 };
 
 // Get POI color with fallback

@@ -79,7 +79,7 @@ const initialState: AppState = {
   coordinates: null,
   travelMode: 'walk',
   travelTime: 15,
-  selectedCategories: ['library'],
+  selectedCategories: ['grocery'],  // Default to food access (most common equity analysis)
 
   // Results
   currentAnalysis: null,
