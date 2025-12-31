@@ -172,8 +172,7 @@ export default function Map({ className = '' }: MapProps) {
         data: geojson,
       });
 
-      // Census blocks should render ON TOP of isochrone (no beforeLayer)
-      // This shows demographic data within the travel-time area
+      // Census blocks render on top of isochrone fill
       map.current.addLayer({
         id: 'census-fill',
         type: 'fill',
@@ -182,22 +181,25 @@ export default function Map({ className = '' }: MapProps) {
           visibility: visibility,
         },
         paint: {
+          // Color scale: darker blue = higher population (conventional choropleth)
           'fill-color': [
             'interpolate',
             ['linear'],
             ['coalesce', ['get', 'population'], 0],
             0,
-            '#1e293b',
+            '#dbeafe',    // Very light blue (lowest)
             500,
-            '#334155',
+            '#93c5fd',    // Light blue
             1000,
-            '#475569',
+            '#60a5fa',    // Medium blue
             2000,
-            '#3b82f6',
-            5000,
-            '#60a5fa',
+            '#3b82f6',    // Blue
+            4000,
+            '#2563eb',    // Darker blue
+            6000,
+            '#1d4ed8',    // Dark blue (highest)
           ],
-          'fill-opacity': (censusLayer?.opacity ?? 0.7) * 0.6,
+          'fill-opacity': (censusLayer?.opacity ?? 0.7) * 0.65,
         },
       });
 
@@ -209,13 +211,26 @@ export default function Map({ className = '' }: MapProps) {
           visibility: visibility,
         },
         paint: {
-          'line-color': '#94a3b8',
-          'line-width': 1,
-          'line-opacity': 0.8,
+          'line-color': '#64748b',
+          'line-width': 0.75,
+          'line-opacity': 0.6,
         },
       });
     }
   }, [currentAnalysis?.censusBlocks, layers, mapLoaded]);
+
+  // Ensure isochrone outline is on top of census blocks
+  useEffect(() => {
+    if (!map.current || !mapLoaded || !currentAnalysis?.isochrone || !currentAnalysis?.censusBlocks) return;
+
+    const isochroneLayer = layers.find((l) => l.id === 'isochrone');
+    if (!isochroneLayer?.visible) return;
+
+    // Move isochrone outline to top if it exists
+    if (map.current.getLayer('isochrone-outline')) {
+      map.current.moveLayer('isochrone-outline');
+    }
+  }, [currentAnalysis?.censusBlocks, currentAnalysis?.isochrone, layers, mapLoaded]);
 
   // Census block hover popup
   useEffect(() => {
