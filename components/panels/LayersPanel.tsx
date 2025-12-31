@@ -2,9 +2,15 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Layers, MapPin, Grid3X3 } from 'lucide-react';
-import { useAppStore, useActiveLayerCount } from '@/lib/store';
+import { Eye, EyeOff, Layers, MapPin, Grid3X3, ChevronDown } from 'lucide-react';
+import { useAppStore, useActiveLayerCount, type CensusVariable } from '@/lib/store';
 import { cn } from '@/lib/utils';
+
+const CENSUS_VARIABLES: { id: CensusVariable; name: string; description: string }[] = [
+  { id: 'population', name: 'Population', description: 'Total population count' },
+  { id: 'median_income', name: 'Median Income', description: 'Median household income' },
+  { id: 'median_age', name: 'Median Age', description: 'Median age of residents' },
+];
 
 const LAYER_CONFIG = [
   {
@@ -38,7 +44,7 @@ const MAP_STYLES = [
 ];
 
 export default function LayersPanel() {
-  const { layers, toggleLayerVisibility, updateLayer, mapStyle, setMapStyle } = useAppStore();
+  const { layers, toggleLayerVisibility, updateLayer, mapStyle, setMapStyle, censusVariable, setCensusVariable } = useAppStore();
   const activeCount = useActiveLayerCount();
 
   return (
@@ -81,12 +87,39 @@ export default function LayersPanel() {
                   </button>
                 </div>
                 {layer.visible && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-2xs">
-                      <span className="text-slate-500">Opacity</span>
-                      <span className="text-slate-400">{Math.round(layer.opacity * 100)}%</span>
+                  <div className="space-y-3">
+                    {/* Census variable selector - only for census layer */}
+                    {config.id === 'census' && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-2xs">
+                          <span className="text-slate-500">Display Variable</span>
+                        </div>
+                        <div className="relative">
+                          <select
+                            value={censusVariable}
+                            onChange={(e) => setCensusVariable(e.target.value as CensusVariable)}
+                            className="w-full appearance-none bg-carto-surface/50 border border-carto-border/50 rounded-lg px-3 py-2 pr-8 text-sm text-slate-200 focus:outline-none focus:border-blue-500/50 cursor-pointer"
+                          >
+                            {CENSUS_VARIABLES.map((v) => (
+                              <option key={v.id} value={v.id}>
+                                {v.name}
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                        </div>
+                        <p className="text-2xs text-slate-500">
+                          {CENSUS_VARIABLES.find((v) => v.id === censusVariable)?.description}
+                        </p>
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-2xs">
+                        <span className="text-slate-500">Opacity</span>
+                        <span className="text-slate-400">{Math.round(layer.opacity * 100)}%</span>
+                      </div>
+                      <input type="range" min="0" max="100" value={layer.opacity * 100} onChange={(e) => updateLayer(config.id, { opacity: parseInt(e.target.value) / 100 })} className="w-full" />
                     </div>
-                    <input type="range" min="0" max="100" value={layer.opacity * 100} onChange={(e) => updateLayer(config.id, { opacity: parseInt(e.target.value) / 100 })} className="w-full" />
                   </div>
                 )}
               </motion.div>

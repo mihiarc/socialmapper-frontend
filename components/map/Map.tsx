@@ -30,7 +30,51 @@ export default function Map({ className = '' }: MapProps) {
     setMapCenter,
     setMapZoom,
     coordinates,
+    censusVariable,
   } = useAppStore();
+
+  // Color scales for different census variables
+  const getCensusColorScale = (variable: string) => {
+    switch (variable) {
+      case 'median_income':
+        return [
+          'interpolate',
+          ['linear'],
+          ['coalesce', ['get', 'median_income'], 0],
+          0, '#d1fae5',      // Very light green (lowest)
+          30000, '#6ee7b7',  // Light green
+          50000, '#34d399',  // Medium green
+          75000, '#10b981',  // Green
+          100000, '#059669', // Darker green
+          150000, '#047857', // Dark green (highest)
+        ];
+      case 'median_age':
+        return [
+          'interpolate',
+          ['linear'],
+          ['coalesce', ['get', 'median_age'], 0],
+          0, '#fef3c7',    // Very light amber (lowest)
+          25, '#fde68a',   // Light amber
+          30, '#fcd34d',   // Medium amber
+          35, '#fbbf24',   // Amber
+          45, '#f59e0b',   // Darker amber
+          60, '#d97706',   // Dark amber (highest)
+        ];
+      case 'population':
+      default:
+        return [
+          'interpolate',
+          ['linear'],
+          ['coalesce', ['get', 'population'], 0],
+          0, '#dbeafe',    // Very light blue (lowest)
+          500, '#93c5fd',  // Light blue
+          1000, '#60a5fa', // Medium blue
+          2000, '#3b82f6', // Blue
+          4000, '#2563eb', // Darker blue
+          6000, '#1d4ed8', // Dark blue (highest)
+        ];
+    }
+  };
 
   // Initialize map
   useEffect(() => {
@@ -181,24 +225,8 @@ export default function Map({ className = '' }: MapProps) {
           visibility: visibility,
         },
         paint: {
-          // Color scale: darker blue = higher population (conventional choropleth)
-          'fill-color': [
-            'interpolate',
-            ['linear'],
-            ['coalesce', ['get', 'population'], 0],
-            0,
-            '#dbeafe',    // Very light blue (lowest)
-            500,
-            '#93c5fd',    // Light blue
-            1000,
-            '#60a5fa',    // Medium blue
-            2000,
-            '#3b82f6',    // Blue
-            4000,
-            '#2563eb',    // Darker blue
-            6000,
-            '#1d4ed8',    // Dark blue (highest)
-          ],
+          // Dynamic color scale based on selected census variable
+          'fill-color': getCensusColorScale(censusVariable) as mapboxgl.Expression,
           'fill-opacity': (censusLayer?.opacity ?? 0.7) * 0.65,
         },
       });
@@ -217,7 +245,18 @@ export default function Map({ className = '' }: MapProps) {
         },
       });
     }
-  }, [currentAnalysis?.censusBlocks, layers, mapLoaded]);
+  }, [currentAnalysis?.censusBlocks, layers, mapLoaded, censusVariable]);
+
+  // Update census fill color when variable changes
+  useEffect(() => {
+    if (!map.current || !mapLoaded || !map.current.getLayer('census-fill')) return;
+
+    map.current.setPaintProperty(
+      'census-fill',
+      'fill-color',
+      getCensusColorScale(censusVariable) as mapboxgl.Expression
+    );
+  }, [censusVariable, mapLoaded]);
 
   // Ensure isochrone outline is on top of census blocks
   useEffect(() => {

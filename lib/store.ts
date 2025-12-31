@@ -9,22 +9,25 @@ import type {
   ProgressEvent,
 } from './types';
 
+// Census variable options for choropleth
+export type CensusVariable = 'population' | 'median_income' | 'median_age';
+
 interface AppActions {
   // Location
   setLocation: (location: string) => void;
   setCoordinates: (coordinates: Coordinates | null) => void;
-  
+
   // Analysis config
   setTravelMode: (mode: TravelMode) => void;
   setTravelTime: (time: number) => void;
   toggleCategory: (category: POICategory) => void;
   setSelectedCategories: (categories: POICategory[]) => void;
-  
+
   // Results
   setCurrentAnalysis: (analysis: AnalysisResult | null) => void;
   addToHistory: (analysis: AnalysisResult) => void;
   clearHistory: () => void;
-  
+
   // UI
   setSidebarOpen: (open: boolean) => void;
   toggleSidebar: () => void;
@@ -34,14 +37,15 @@ interface AppActions {
 
   // Progress
   setAnalysisProgress: (progress: ProgressEvent | null) => void;
-  
+
   // Map
   setMapCenter: (center: Coordinates) => void;
   setMapZoom: (zoom: number) => void;
   setMapStyle: (style: string) => void;
   updateLayer: (layerId: string, updates: Partial<MapLayer>) => void;
   toggleLayerVisibility: (layerId: string) => void;
-  
+  setCensusVariable: (variable: CensusVariable) => void;
+
   // Reset
   resetAnalysis: () => void;
   resetAll: () => void;
@@ -71,6 +75,7 @@ interface AppState {
   mapZoom: number;
   mapStyle: string;
   layers: MapLayer[];
+  censusVariable: CensusVariable;
 }
 
 const initialState: AppState = {
@@ -116,6 +121,7 @@ const initialState: AppState = {
       opacity: 1,
     },
   ],
+  censusVariable: 'population',
 };
 
 export const useAppStore = create<AppState & AppActions>()(
@@ -188,7 +194,9 @@ export const useAppStore = create<AppState & AppActions>()(
             ),
           });
         },
-        
+
+        setCensusVariable: (censusVariable) => set({ censusVariable }),
+
         // Reset actions
         resetAnalysis: () =>
           set({
@@ -211,6 +219,7 @@ export const useAppStore = create<AppState & AppActions>()(
           analysisHistory: state.analysisHistory,
           mapStyle: state.mapStyle,
           sidebarOpen: state.sidebarOpen,
+          censusVariable: state.censusVariable,
         }),
       }
     ),
