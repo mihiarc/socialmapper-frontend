@@ -162,6 +162,8 @@ export default function Map({ className = '' }: MapProps) {
       if (map.current.getLayer('census-fill')) {
         map.current.setLayoutProperty('census-fill', 'visibility', visibility);
         map.current.setLayoutProperty('census-outline', 'visibility', visibility);
+        // Update opacity
+        map.current.setPaintProperty('census-fill', 'fill-opacity', (censusLayer?.opacity ?? 0.7) * 0.6);
       }
     } else {
       // Create source and layers
@@ -170,53 +172,48 @@ export default function Map({ className = '' }: MapProps) {
         data: geojson,
       });
 
-      // Find a valid "before" layer or add at default position
-      const beforeLayer = map.current.getLayer('isochrone-fill') ? 'isochrone-fill' : undefined;
-
-      map.current.addLayer(
-        {
-          id: 'census-fill',
-          type: 'fill',
-          source: 'census',
-          layout: {
-            visibility: visibility,
-          },
-          paint: {
-            'fill-color': [
-              'interpolate',
-              ['linear'],
-              ['coalesce', ['get', 'population'], 0],
-              0,
-              '#1e293b',
-              1000,
-              '#334155',
-              5000,
-              '#3b82f6',
-              10000,
-              '#60a5fa',
-            ],
-            'fill-opacity': (censusLayer?.opacity ?? 0.7) * 0.5,
-          },
+      // Census blocks should render ON TOP of isochrone (no beforeLayer)
+      // This shows demographic data within the travel-time area
+      map.current.addLayer({
+        id: 'census-fill',
+        type: 'fill',
+        source: 'census',
+        layout: {
+          visibility: visibility,
         },
-        beforeLayer
-      );
-
-      map.current.addLayer(
-        {
-          id: 'census-outline',
-          type: 'line',
-          source: 'census',
-          layout: {
-            visibility: visibility,
-          },
-          paint: {
-            'line-color': '#475569',
-            'line-width': 0.5,
-            'line-opacity': 0.5,
-          },
+        paint: {
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['coalesce', ['get', 'population'], 0],
+            0,
+            '#1e293b',
+            500,
+            '#334155',
+            1000,
+            '#475569',
+            2000,
+            '#3b82f6',
+            5000,
+            '#60a5fa',
+          ],
+          'fill-opacity': (censusLayer?.opacity ?? 0.7) * 0.6,
         },
-        beforeLayer
-      );
+      });
+
+      map.current.addLayer({
+        id: 'census-outline',
+        type: 'line',
+        source: 'census',
+        layout: {
+          visibility: visibility,
+        },
+        paint: {
+          'line-color': '#94a3b8',
+          'line-width': 1,
+          'line-opacity': 0.8,
+        },
+      });
     }
   }, [currentAnalysis?.censusBlocks, layers, mapLoaded]);
 
